@@ -16,13 +16,20 @@ public class PlayerMovement : MonoBehaviour
 
     private float jumpBufferTime = 0.2f;
     private float jumpBufferCounter;
+    private bool doubleJump;
+
+     private bool canDash = true;
+    private bool isDashing;
+    private float dashingPower = 24f;
+    private float dashingTime = 0.2f;
+    private float dashingCooldown = 1f;
 
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private int dmg;
 
-    public GameObject attackPoint;
+    //public GameObject attackPoint;
     public float radius;
     public LayerMask enemies;
 
@@ -32,9 +39,25 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+         if (isDashing)
+        {
+            return;
+        }
+
         horizontal = Input.GetAxisRaw("Horizontal");
         //Debug.Log("This is a debug message. The value of myNumber is: " + horizontal);
-
+        if (IsGrounded() && !Input.GetButton("Jump")) {
+            doubleJump = false;
+        }
+        if (Input.GetButtonDown("Jump"))
+        {
+            if (IsGrounded() || doubleJump)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
+                anim.Play("running", -1, 0f);
+                doubleJump = !doubleJump;
+            }
+        }
         if (IsGrounded()){
             coyoteTimeCounter = coyoteTime;
             if (horizontal != 0)
@@ -65,14 +88,16 @@ public class PlayerMovement : MonoBehaviour
             jumpBufferCounter = 0f;
             StartCoroutine(JumpCooldown());
         }
+        
 
         if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f) {
             rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
             coyoteTimeCounter = 0f;
         }
 
-        if (Input.GetKeyDown("z")) {
-            Attack();
+        if (Input.GetKeyDown(KeyCode.C) && canDash)
+        {
+            StartCoroutine(Dash());
         }
 
         Flip();
@@ -80,24 +105,16 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (isDashing)
+        {
+            return;
+        }
         rb.velocity = new Vector2(horizontal * speed, rb.velocity.y);
     }
 
     private bool IsGrounded()
     {
         return Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
-    }
-
-    private void Attack() {
-        anim.SetTrigger("attacking");
-    }
-
-    private void DetectAttack() {
-        Collider2D[] enemy = Physics2D.OverlapCircleAll(attackPoint.transform.position,radius,enemies);
-        foreach (Collider2D enemyGameobject in enemy) {
-            Debug.Log(enemyGameobject.GetComponent<cuboneHealth>().health);
-            enemyGameobject.GetComponent<cuboneHealth>().TakeDamage(dmg);
-        }
     }
 
     private void Flip()
@@ -118,7 +135,23 @@ public class PlayerMovement : MonoBehaviour
         isJumping = false;
     }
 
-    private void OnDrawGizmos() {
-        Gizmos.DrawWireSphere(attackPoint.transform.position, radius);
+    private IEnumerator Dash()
+    {
+        anim.SetBool("rolling",true);
+        canDash = false;
+        isDashing = true;
+        float originalGravity = rb.gravityScale;
+        rb.gravityScale = 0f;
+        rb.velocity = new Vector2(-transform.localScale.x * dashingPower, 0f);
+        yield return new WaitForSeconds(dashingTime);
+        rb.gravityScale = originalGravity;
+        anim.SetBool("rolling",false);
+        isDashing = false;
+        yield return new WaitForSeconds(dashingCooldown);
+        canDash = true;
     }
+
+    /*private void OnDrawGizmos() {
+        Gizmos.DrawWireSphere(attackPoint.transform.position, radius);
+    }*/
 }

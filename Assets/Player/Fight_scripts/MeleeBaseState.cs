@@ -45,8 +45,9 @@ public class MeleeBaseState : State
         }
 
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKeyDown(KeyCode.Z))
         {
+            shouldCombo = true;
             AttackPressedTimer = 2;
         }
 
@@ -73,13 +74,15 @@ public class MeleeBaseState : State
             if (!collidersDamaged.Contains(collidersToDamage[i]))
             {
                 TeamComponent hitTeamComponent = collidersToDamage[i].GetComponentInChildren<TeamComponent>();
+                cuboneHealth enemyHealth = collidersToDamage[i].GetComponent<cuboneHealth>();
 
                 // Only check colliders with a valid Team Componnent attached
                 if (hitTeamComponent && hitTeamComponent.teamIndex == TeamIndex.Enemy)
                 {
-                    GameObject.Instantiate(HitEffectPrefab, collidersToDamage[i].transform);
+                    //GameObject.Instantiate(collidersToDamage[i].transform);
                     Debug.Log("Enemy Has Taken:" + attackIndex + "Damage");
                     collidersDamaged.Add(collidersToDamage[i]);
+                    enemyHealth.TakeDamage(5);
                 }
             }
         }

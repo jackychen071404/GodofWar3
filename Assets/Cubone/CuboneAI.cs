@@ -24,6 +24,9 @@ public class CuboneAI : MonoBehaviour
     [SerializeField] private BoxCollider2D boxCollider;
     [SerializeField] private LayerMask playerLayer;
     private float CDtimer = Mathf.Infinity;
+    private bool canMove = true; 
+    private float framesStopped = 0f;
+    public float stopDuration = 1;
 
     public GameObject attackPoint;
     public float radius;
@@ -49,7 +52,35 @@ public class CuboneAI : MonoBehaviour
                 anim.SetTrigger("attacking");
             }
         }
+        if (canMove) // Check if movement is allowed
+        {
+            MoveLogic();
+        }
+
+        if (!canMove)
+        {
+            // Increment the stop timer
+            framesStopped += Time.deltaTime;
+            Debug.Log("Frames stopped: " + framesStopped);
+
+            // Check if the stop duration has passed
+            if (framesStopped >= stopDuration)
+            {
+                // Reset movement flag and timer
+                canMove = true;
+                framesStopped = 0f;
+            }
+        }
         
+        if (this.GetComponent<cuboneHealth>().health == 0) {
+            rb.velocity = new Vector2(0,0);
+            Destroy(this);
+            Destroy(self,2);
+        }
+
+    }
+
+    private void MoveLogic() {
         //patrol logic
         Vector2 point = currentPoint.position - transform.position;
         if (currentPoint == pointB.transform) {
@@ -67,14 +98,7 @@ public class CuboneAI : MonoBehaviour
             flip();
             currentPoint = pointB.transform;
         }
-        if (this.GetComponent<cuboneHealth>().health == 0) {
-            rb.velocity = new Vector2(0,0);
-            Destroy(this);
-            Destroy(self,2);
-        }
-
     }
-
     private void flip() {
         Vector3 localScale = transform.localScale;
         localScale.x *= -1;
@@ -92,6 +116,13 @@ public class CuboneAI : MonoBehaviour
             Debug.Log("Hit player");
             playerGameobject.GetComponent<playerHealth>().TakeDamage(dmg);
         }
+    }
+
+    public void StopMoving()
+    {
+        canMove = false; // Stop movement
+        rb.velocity = Vector2.zero; // Set velocity to zero
+        framesStopped = 0f;
     }
 
     private void OnDrawGizmos() {

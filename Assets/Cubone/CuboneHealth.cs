@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class cuboneHealth : MonoBehaviour
 {
+    public CuboneAI cuboneAI;
     // Start is called before the first frame update
     public float health;
     public float maxHealth;
@@ -25,6 +26,7 @@ public class cuboneHealth : MonoBehaviour
 
     public void TakeDamage(int dmg) {
         health -= dmg;
+        cuboneAI.StopMoving();
 
         //play hurt animation
         anim.SetTrigger("Hurt");
@@ -32,6 +34,7 @@ public class cuboneHealth : MonoBehaviour
         if (health <= 0) {
             Die();
         }
+        
     }
 
     void Die() {
